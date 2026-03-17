@@ -43,7 +43,7 @@ class AuthViewModel extends GetxController {
         password: passwordController.text.trim(),
       );
       currentUser.value = user;
-      Get.offAllNamed('/home');
+      Get.offAllNamed('/main');
     } catch (e) {
       Get.snackbar(
         'Registration Failed',
@@ -67,7 +67,7 @@ class AuthViewModel extends GetxController {
         password: passwordController.text.trim(),
       );
       currentUser.value = user;
-      Get.offAllNamed('/home');
+      Get.offAllNamed('/main');
     } catch (e) {
       Get.snackbar(
         'Login Failed',

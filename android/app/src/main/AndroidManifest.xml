@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<uses-permission android:name="android.permission.INTERNET"/>
+<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+<uses-permission android:name="android.permission.VIBRATE" />
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
         android:label="zync"
         android:name="${applicationName}"
@@ -17,7 +21,7 @@
                  while the Flutter UI initializes. After that, this theme continues
                  to determine the Window background behind the Flutter UI. -->
             <meta-data
-              android:name="io.flutter.embedding.android.NormalTheme"
+              android:name="com.google.firebase.messaging.default_notification_channel_id"
               android:resource="@style/NormalTheme"
               />
             <intent-filter>

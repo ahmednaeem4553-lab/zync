@@ -5,6 +5,8 @@ class MessageModel {
   final String message;
   final DateTime sentAt;
   final bool isRead;
+  final bool isDeleted;
+  final String messageType;
 
   MessageModel({
     required this.messageId,
@@ -13,6 +15,8 @@ class MessageModel {
     required this.message,
     required this.sentAt,
     this.isRead = false,
+    this.isDeleted = false,
+    this.messageType = 'text',
   });
 
   Map<String, dynamic> toMap() {
@@ -23,6 +27,8 @@ class MessageModel {
       'message': message,
       'sentAt': sentAt.toIso8601String(),
       'isRead': isRead,
+      'isDeleted': isDeleted,
+      'messageType': messageType,
     };
   }
 
@@ -32,9 +38,10 @@ class MessageModel {
       senderId: map['senderId'] ?? '',
       receiverId: map['receiverId'] ?? '',
       message: map['message'] ?? '',
-      sentAt: DateTime.parse(
-          map['sentAt'] ?? DateTime.now().toIso8601String()),
+      sentAt: DateTime.parse(map['sentAt'] ?? DateTime.now().toIso8601String()),
       isRead: map['isRead'] ?? false,
+      isDeleted: map['isDeleted'] ?? false,
+      messageType: map['messageType'] ?? 'text',
     );
   }
 }

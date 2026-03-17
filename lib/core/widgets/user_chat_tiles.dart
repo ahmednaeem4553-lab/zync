@@ -35,7 +35,9 @@ class UserChatTile extends StatelessWidget {
               onTap: () => Get.toNamed('/chat', arguments: user),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 10),
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 child: Row(
                   children: [
                     // Avatar with online dot
@@ -67,8 +69,10 @@ class UserChatTile extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: AppTheme.primary,
                                 shape: BoxShape.circle,
-                                border:
-                                    Border.all(color: Colors.white, width: 2),
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
                               ),
                             ),
                           ),
@@ -84,8 +88,7 @@ class UserChatTile extends StatelessWidget {
                         children: [
                           // Name + time row
                           Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
                                 user.name,
@@ -99,8 +102,10 @@ class UserChatTile extends StatelessWidget {
                               ),
                               if (lastMessage != null)
                                 Text(
-                                  timeago.format(lastMessage.sentAt,
-                                      locale: 'en_short'),
+                                  timeago.format(
+                                    lastMessage.sentAt,
+                                    locale: 'en_short',
+                                  ),
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: unreadCount > 0
@@ -121,11 +126,7 @@ class UserChatTile extends StatelessWidget {
                             children: [
                               Expanded(
                                 child: Text(
-                                  lastMessage == null
-                                      ? user.status
-                                      : lastMessage.senderId == currentUserId
-                                          ? 'You: ${lastMessage.message}'
-                                          : lastMessage.message,
+                                  _getLastMessageText(lastMessage),
                                   style: TextStyle(
                                     fontSize: 13,
                                     color: unreadCount > 0
@@ -145,7 +146,9 @@ class UserChatTile extends StatelessWidget {
                                 Container(
                                   margin: const EdgeInsets.only(left: 8),
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 7, vertical: 3),
+                                    horizontal: 7,
+                                    vertical: 3,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: AppTheme.primary,
                                     borderRadius: BorderRadius.circular(12),
@@ -174,6 +177,23 @@ class UserChatTile extends StatelessWidget {
         );
       },
     );
+  }
+
+  String _getLastMessageText(MessageModel? lastMessage) {
+    if (lastMessage == null) return user.status;
+
+    final isMe = lastMessage.senderId == currentUserId;
+    final prefix = isMe ? 'You: ' : '';
+
+    if (lastMessage.isDeleted) {
+      return '${prefix}This message was deleted';
+    }
+
+    if (lastMessage.messageType == 'image') {
+      return '${prefix}📷 Photo';
+    }
+
+    return '$prefix${lastMessage.message}';
   }
 
   Widget _avatarFallback(String name) {

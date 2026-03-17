@@ -21,7 +21,7 @@ class _SplashViewState extends State<SplashView> {
     await Future.delayed(const Duration(seconds: 2));
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      Get.offAllNamed('/home');
+      Get.offAllNamed('/main');
     } else {
       Get.offAllNamed('/login');
     }

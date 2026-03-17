@@ -5,19 +5,86 @@ class ChatRepository {
   final ChatService _chatService = ChatService();
 
   Future<void> sendMessage({
-    required String senderId,
+  required String senderId,
+  required String receiverId,
+  required String message,
+  String senderName = '',
+}) async {
+  await _chatService.sendMessage(
+    senderId: senderId,
+    receiverId: receiverId,
+    message: message,
+    senderName: senderName,
+  );
+}
+
+  // Add these inside ChatRepository class:
+
+  Future<void> updateTypingStatus({
+    required String currentUserId,
     required String receiverId,
-    required String message,
+    required bool isTyping,
   }) async {
-    await _chatService.sendMessage(
-      senderId: senderId,
+    await _chatService.updateTypingStatus(
+      currentUserId: currentUserId,
       receiverId: receiverId,
-      message: message,
+      isTyping: isTyping,
     );
   }
 
-  Stream<List<MessageModel>> getMessages(
-      String senderId, String receiverId) {
+  // Add these inside ChatRepository class:
+
+  Future<void> deleteMessageForEveryone({
+    required String currentUserId,
+    required String receiverId,
+    required String messageId,
+  }) async {
+    await _chatService.deleteMessageForEveryone(
+      currentUserId: currentUserId,
+      receiverId: receiverId,
+      messageId: messageId,
+    );
+  }
+
+  // Add this inside ChatRepository class:
+
+  Future<void> sendImageMessage({
+  required String senderId,
+  required String receiverId,
+  required String base64Image,
+  String senderName = '',
+}) async {
+  await _chatService.sendImageMessage(
+    senderId: senderId,
+    receiverId: receiverId,
+    base64Image: base64Image,
+    senderName: senderName,
+  );
+}
+
+  Future<void> deleteMessageForMe({
+    required String currentUserId,
+    required String receiverId,
+    required String messageId,
+  }) async {
+    await _chatService.deleteMessageForMe(
+      currentUserId: currentUserId,
+      receiverId: receiverId,
+      messageId: messageId,
+    );
+  }
+
+  Stream<bool> getTypingStatus({
+    required String currentUserId,
+    required String receiverId,
+  }) {
+    return _chatService.getTypingStatus(
+      currentUserId: currentUserId,
+      receiverId: receiverId,
+    );
+  }
+
+  Stream<List<MessageModel>> getMessages(String senderId, String receiverId) {
     return _chatService.getMessages(senderId, receiverId);
   }
 
@@ -29,8 +96,7 @@ class ChatRepository {
     return _chatService.getLastMessage(uid1, uid2);
   }
 
-  Future<void> markMessagesAsRead(
-      String senderId, String receiverId) async {
+  Future<void> markMessagesAsRead(String senderId, String receiverId) async {
     await _chatService.markMessagesAsRead(senderId, receiverId);
   }
 }

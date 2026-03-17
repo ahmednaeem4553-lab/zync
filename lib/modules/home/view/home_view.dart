@@ -27,11 +27,6 @@ class HomeView extends StatelessWidget {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search_rounded,
-                color: AppTheme.textSecondary),
-            onPressed: () => vm.toggleSearch(),
-          ),
-          IconButton(
             icon: const Icon(Icons.logout_rounded,
                 color: AppTheme.textSecondary),
             onPressed: () => _confirmLogout(vm),
@@ -41,42 +36,32 @@ class HomeView extends StatelessWidget {
 
       body: Column(
         children: [
-          // Search bar — shows only when search is toggled
-          Obx(() => vm.isSearching.value
-              ? Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                  child: TextField(
-                    autofocus: true,
-                    onChanged: vm.filterUsers,
-                    decoration: InputDecoration(
-                      hintText: 'Search by name or email...',
-                      prefixIcon: const Icon(Icons.search,
-                          color: AppTheme.textHint),
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.close,
-                            color: AppTheme.textHint),
-                        onPressed: () {
-                          vm.toggleSearch();
-                          vm.filterUsers('');
-                        },
-                      ),
-                      filled: true,
-                      fillColor: AppTheme.surface,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                  ),
-                )
-              : const SizedBox.shrink()),
+          // Inline search bar always visible
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: TextField(
+              onChanged: vm.filterUsers,
+              decoration: InputDecoration(
+                hintText: 'Search chats...',
+                prefixIcon:
+                    const Icon(Icons.search, color: AppTheme.textHint),
+                filled: true,
+                fillColor: AppTheme.surface,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
 
           // Chat list
           Expanded(
             child: Obx(() {
               if (vm.isLoading.value) {
                 return const Center(
-                  child: CircularProgressIndicator(color: AppTheme.primary),
+                  child:
+                      CircularProgressIndicator(color: AppTheme.primary),
                 );
               }
 
@@ -85,13 +70,19 @@ class HomeView extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.people_outline,
+                      Icon(Icons.chat_bubble_outline,
                           size: 64, color: AppTheme.textHint),
                       const SizedBox(height: 12),
                       const Text(
-                        'No users found',
+                        'No chats yet',
                         style: TextStyle(
                             color: AppTheme.textSecondary, fontSize: 16),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Search for users to start chatting',
+                        style: TextStyle(
+                            color: AppTheme.textHint, fontSize: 13),
                       ),
                     ],
                   ),
@@ -101,7 +92,7 @@ class HomeView extends StatelessWidget {
               return ListView.separated(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 itemCount: vm.filteredUsers.length,
-                separatorBuilder: (_, __) => const Divider(
+                separatorBuilder: (_, _) => const Divider(
                   height: 1,
                   indent: 80,
                   color: AppTheme.divider,
@@ -125,8 +116,8 @@ class HomeView extends StatelessWidget {
   void _confirmLogout(HomeViewModel vm) {
     Get.dialog(
       AlertDialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16)),
         title: const Text('Logout',
             style: TextStyle(fontWeight: FontWeight.bold)),
         content: const Text('Are you sure you want to logout?'),
@@ -143,7 +134,8 @@ class HomeView extends StatelessWidget {
             },
             child: const Text('Logout',
                 style: TextStyle(
-                    color: AppTheme.error, fontWeight: FontWeight.w600)),
+                    color: AppTheme.error,
+                    fontWeight: FontWeight.w600)),
           ),
         ],
       ),

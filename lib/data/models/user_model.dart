@@ -6,7 +6,8 @@ class UserModel {
   final String status;
   final bool isOnline;
   final DateTime createdAt;
-  final DateTime? lastSeen; 
+  final DateTime? lastSeen;
+  final String? fcmToken;
 
   UserModel({
     required this.uid,
@@ -17,6 +18,7 @@ class UserModel {
     this.isOnline = false,
     required this.createdAt,
     this.lastSeen,
+    this.fcmToken,
   });
 
   // Convert UserModel → Firestore Map
@@ -30,6 +32,7 @@ class UserModel {
       'isOnline': isOnline,
       'createdAt': createdAt.toIso8601String(),
       'lastSeen': lastSeen?.toIso8601String(),
+      'fcmToken': fcmToken,
     };
   }
 
@@ -43,10 +46,14 @@ class UserModel {
       status: map['status'] ?? 'Hey there! I am using Zync.',
       isOnline: map['isOnline'] ?? false,
       createdAt: DateTime.parse(
-          map['createdAt'] ?? DateTime.now().toIso8601String()),
-      lastSeen: map['lastSeen'] != null // ADD THIS
+        map['createdAt'] ?? DateTime.now().toIso8601String(),
+      ),
+      lastSeen:
+          map['lastSeen'] !=
+              null // ADD THIS
           ? DateTime.parse(map['lastSeen'])
-          : null,    
+          : null,
+      fcmToken: map['fcmToken'],
     );
   }
 
@@ -60,6 +67,7 @@ class UserModel {
     bool? isOnline,
     DateTime? createdAt,
     DateTime? lastSeen,
+     String? fcmToken,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -70,6 +78,7 @@ class UserModel {
       isOnline: isOnline ?? this.isOnline,
       createdAt: createdAt ?? this.createdAt,
       lastSeen: lastSeen ?? this.lastSeen,
+      fcmToken: fcmToken ?? this.fcmToken,
     );
   }
 }

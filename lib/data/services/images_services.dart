@@ -9,9 +9,9 @@ class ImageService {
   Future<File?> pickImage(ImageSource source) async {
     final picked = await _picker.pickImage(
       source: source,
-      imageQuality: 35,
-      maxWidth: 200,
-      maxHeight: 200,
+      imageQuality: 100,
+      maxWidth: 1080,
+      maxHeight: 1080,
     );
     if (picked == null) return null;
     return File(picked.path);
@@ -20,7 +20,7 @@ class ImageService {
   // Convert file to base64 string
   Future<String?> convertToBase64(File imageFile) async {
     final bytes = await imageFile.readAsBytes();
-    if (bytes.length > 100000) return null; // reject if still too large
+    if (bytes.length > 800000) return null; // reject if still too large
     return base64Encode(bytes);
   }
 

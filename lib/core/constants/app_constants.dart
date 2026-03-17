@@ -14,5 +14,5 @@ class AppConstants {
   static const String defaultAvatar =
       'https://ui-avatars.com/api/?background=10B981&color=fff&name=';
 
-   static const int maxImageSizeBytes = 100000;    
+   static const int maxImageSizeBytes = 800000;    
 }

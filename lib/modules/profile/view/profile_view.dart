@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:zync/core/widgets/zync_avatart.dart';
 import '../../../core/theme/app_theme.dart';
 import '../viewmodel/profile_viewmodel.dart';
 
