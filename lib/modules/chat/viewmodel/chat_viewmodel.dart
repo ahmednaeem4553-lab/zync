@@ -14,6 +14,7 @@ import '../../../data/services/auth_service.dart';
 class ChatViewModel extends GetxController {
   final ChatRepository _chatRepository = ChatRepository();
   final AuthService _authService = AuthService();
+  String? currentChatId;
 
   final RxList<MessageModel> messages = <MessageModel>[].obs;
   final RxBool isLoading = true.obs;
@@ -31,20 +32,34 @@ class ChatViewModel extends GetxController {
 
   Timer? _typingTimer;
 
-  @override
+
+  void setCurrentChat(String chatId) {
+    currentChatId = chatId;
+    update(); // or refresh if needed
+  }
+
+    @override
   void onInit() {
     super.onInit();
     receiver = Get.arguments as UserModel;
     receiverUser.value = receiver;
+
+    // Generate and set chatId consistently
+    currentChatId = _generateChatId(currentUserId, receiver.uid);
+    
     _authService.updateOnlineStatus(true);
     listenToMessages();
     listenToReceiverStatus();
     listenToTypingStatus();
     markAsRead();
-    _loadCurrentUserName(); 
+    _loadCurrentUserName();
 
-    // Listen to text field changes for typing indicator
     messageController.addListener(_onTextChanged);
+  }
+
+  String _generateChatId(String uid1, String uid2) {
+    final ids = [uid1, uid2]..sort();
+    return ids.join('_');
   }
 
   @override
@@ -56,6 +71,7 @@ class ChatViewModel extends GetxController {
     _authService.updateOnlineStatus(false);
     messageController.dispose();
     scrollController.dispose();
+    currentChatId = null;
     super.onClose();
   }
 
@@ -260,6 +276,7 @@ Future<void> _pickAndSendImage(ImageSource source) async {
 
   try {
     await _chatRepository.sendMessage(
+      chatid: _generateChatId(currentUserId, receiver.uid),
       senderId: currentUserId,
       receiverId: receiver.uid,
       message: text,

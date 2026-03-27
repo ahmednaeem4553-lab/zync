@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
-import 'package:zync/data/services/notification_services.dart';
 import '../../core/constants/app_constants.dart';
 import '../models/message_model.dart';
 
@@ -13,8 +12,54 @@ class ChatService {
     return '${sorted[0]}_${sorted[1]}';
   }
 
-  // Add this inside ChatService class:
+  // ==================== SEND TEXT MESSAGE ====================
+  Future<void> sendMessage({
+    required String senderId,
+    required String receiverId,
+    required String message,
+    String senderName = '',
+  }) async {
+    final chatRoomId = getChatRoomId(senderId, receiverId);
+    final messageId = _uuid.v4();
 
+    final newMessage = MessageModel(
+      messageId: messageId,
+      senderId: senderId,
+      receiverId: receiverId,
+      message: message,
+      sentAt: DateTime.now(),
+      messageType: 'text',
+    );
+
+    try {
+      // Write message
+      await _firestore
+          .collection(AppConstants.chatsCollection)
+          .doc(chatRoomId)
+          .collection(AppConstants.messagesCollection)
+          .doc(messageId)
+          .set(newMessage.toMap());
+
+      // Update chat room metadata
+      await _firestore
+          .collection(AppConstants.chatsCollection)
+          .doc(chatRoomId)
+          .set({
+        'lastMessage': message,
+        'lastMessageTime': newMessage.sentAt.toIso8601String(),
+        'lastMessageSenderId': senderId,
+        'participants': [senderId, receiverId],
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      print('Message sent successfully to chat: $chatRoomId');
+    } catch (e) {
+      print('Error sending message: $e');
+      rethrow; // Let ViewModel catch and show snackbar
+    }
+  }
+
+  // ==================== SEND IMAGE MESSAGE ====================
   Future<void> sendImageMessage({
     required String senderId,
     required String receiverId,
@@ -33,33 +78,33 @@ class ChatService {
       messageType: 'image',
     );
 
-    await _firestore
-        .collection(AppConstants.chatsCollection)
-        .doc(chatRoomId)
-        .collection(AppConstants.messagesCollection)
-        .doc(messageId)
-        .set(newMessage.toMap());
+    try {
+      await _firestore
+          .collection(AppConstants.chatsCollection)
+          .doc(chatRoomId)
+          .collection(AppConstants.messagesCollection)
+          .doc(messageId)
+          .set(newMessage.toMap());
 
-    await _firestore
-        .collection(AppConstants.chatsCollection)
-        .doc(chatRoomId)
-        .set({
-          'lastMessage': '📷 Photo',
-          'lastMessageTime': newMessage.sentAt.toIso8601String(),
-          'lastMessageSenderId': senderId,
-          'participants': [senderId, receiverId],
-        }, SetOptions(merge: true));
+      await _firestore
+          .collection(AppConstants.chatsCollection)
+          .doc(chatRoomId)
+          .set({
+        'lastMessage': '📷 Photo',
+        'lastMessageTime': newMessage.sentAt.toIso8601String(),
+        'lastMessageSenderId': senderId,
+        'participants': [senderId, receiverId],
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
 
-    // Send notification
-    final notificationService = NotificationService();
-    await notificationService.sendNotification(
-      receiverId: receiverId,
-      senderName: senderName,
-      message: '📷 Photo',
-      isImage: true,
-    );
+      print('Image message sent successfully');
+    } catch (e) {
+      print('Error sending image: $e');
+      rethrow;
+    }
   }
 
+  // ==================== TYPING STATUS ====================
   Future<void> updateTypingStatus({
     required String currentUserId,
     required String receiverId,
@@ -72,7 +117,6 @@ class ChatService {
         .set({'typing_$currentUserId': isTyping}, SetOptions(merge: true));
   }
 
-  // Stream typing status of other user
   Stream<bool> getTypingStatus({
     required String currentUserId,
     required String receiverId,
@@ -82,12 +126,42 @@ class ChatService {
         .collection(AppConstants.chatsCollection)
         .doc(chatRoomId)
         .snapshots()
-        .map((doc) {
-          if (!doc.exists) return false;
-          return doc.data()?['typing_$receiverId'] ?? false;
-        });
+        .map((doc) => doc.data()?['typing_$receiverId'] ?? false);
   }
 
+  // ==================== MESSAGES STREAM ====================
+  Stream<List<MessageModel>> getMessages(String senderId, String receiverId) {
+    final chatRoomId = getChatRoomId(senderId, receiverId);
+    return _firestore
+        .collection(AppConstants.chatsCollection)
+        .doc(chatRoomId)
+        .collection(AppConstants.messagesCollection)
+        .orderBy('sentAt', descending: false)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => MessageModel.fromMap(doc.data()))
+            .toList());
+  }
+
+  Future<void> markMessagesAsRead(String currentUserId, String otherUserId) async {
+    final chatRoomId = getChatRoomId(currentUserId, otherUserId);
+
+    final unreadMessages = await _firestore
+        .collection(AppConstants.chatsCollection)
+        .doc(chatRoomId)
+        .collection(AppConstants.messagesCollection)
+        .where('receiverId', isEqualTo: currentUserId)
+        .where('isRead', isEqualTo: false)
+        .get();
+
+    final batch = _firestore.batch();
+    for (final doc in unreadMessages.docs) {
+      batch.update(doc.reference, {'isRead': true});
+    }
+    await batch.commit();
+  }
+
+  // ==================== DELETE MESSAGE ====================
   Future<void> deleteMessageForEveryone({
     required String currentUserId,
     required String receiverId,
@@ -99,7 +173,10 @@ class ChatService {
         .doc(chatRoomId)
         .collection(AppConstants.messagesCollection)
         .doc(messageId)
-        .update({'isDeleted': true, 'message': 'This message was deleted'});
+        .update({
+      'isDeleted': true,
+      'message': 'This message was deleted',
+    });
   }
 
   Future<void> deleteMessageForMe({
@@ -115,109 +192,30 @@ class ChatService {
         .doc(messageId)
         .delete();
   }
+  // ==================== LAST MESSAGE & UNREAD COUNT ====================
+Stream<MessageModel?> getLastMessage(String uid1, String uid2) {
+  final chatRoomId = getChatRoomId(uid1, uid2);
+  return _firestore
+      .collection(AppConstants.chatsCollection)
+      .doc(chatRoomId)
+      .collection(AppConstants.messagesCollection)
+      .orderBy('sentAt', descending: true)
+      .limit(1)
+      .snapshots()
+      .map((snapshot) => snapshot.docs.isEmpty
+          ? null
+          : MessageModel.fromMap(snapshot.docs.first.data()));
+}
 
-  Future<void> sendMessage({
-    required String senderId,
-    required String receiverId,
-    required String message,
-    String senderName = '',
-  }) async {
-    final chatRoomId = getChatRoomId(senderId, receiverId);
-    final messageId = _uuid.v4();
-    final newMessage = MessageModel(
-      messageId: messageId,
-      senderId: senderId,
-      receiverId: receiverId,
-      message: message,
-      sentAt: DateTime.now(),
-    );
-
-    await _firestore
-        .collection(AppConstants.chatsCollection)
-        .doc(chatRoomId)
-        .collection(AppConstants.messagesCollection)
-        .doc(messageId)
-        .set(newMessage.toMap());
-
-    await _firestore
-        .collection(AppConstants.chatsCollection)
-        .doc(chatRoomId)
-        .set({
-          'lastMessage': message,
-          'lastMessageTime': newMessage.sentAt.toIso8601String(),
-          'lastMessageSenderId': senderId,
-          'participants': [senderId, receiverId],
-        }, SetOptions(merge: true));
-
-    // Send notification
-    final notificationService = NotificationService();
-    await notificationService.sendNotification(
-      receiverId: receiverId,
-      senderName: senderName,
-      message: message,
-      isImage: false,
-    );
-  }
-
-  Stream<List<MessageModel>> getMessages(String senderId, String receiverId) {
-    final chatRoomId = getChatRoomId(senderId, receiverId);
-    return _firestore
-        .collection(AppConstants.chatsCollection)
-        .doc(chatRoomId)
-        .collection(AppConstants.messagesCollection)
-        .orderBy('sentAt', descending: false)
-        .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => MessageModel.fromMap(doc.data()))
-              .toList(),
-        );
-  }
-
-  // Get unread message count for a specific chat
-  Stream<int> getUnreadCount(String currentUserId, String otherUserId) {
-    final chatRoomId = getChatRoomId(currentUserId, otherUserId);
-    return _firestore
-        .collection(AppConstants.chatsCollection)
-        .doc(chatRoomId)
-        .collection(AppConstants.messagesCollection)
-        .where('receiverId', isEqualTo: currentUserId)
-        .where('isRead', isEqualTo: false)
-        .snapshots()
-        .map((snapshot) => snapshot.docs.length);
-  }
-
-  // Get last message for a chat
-  Stream<MessageModel?> getLastMessage(String uid1, String uid2) {
-    final chatRoomId = getChatRoomId(uid1, uid2);
-    return _firestore
-        .collection(AppConstants.chatsCollection)
-        .doc(chatRoomId)
-        .collection(AppConstants.messagesCollection)
-        .orderBy('sentAt', descending: true)
-        .limit(1)
-        .snapshots()
-        .map(
-          (snapshot) => snapshot.docs.isEmpty
-              ? null
-              : MessageModel.fromMap(snapshot.docs.first.data()),
-        );
-  }
-
-  Future<void> markMessagesAsRead(String senderId, String receiverId) async {
-    final chatRoomId = getChatRoomId(senderId, receiverId);
-    final unreadMessages = await _firestore
-        .collection(AppConstants.chatsCollection)
-        .doc(chatRoomId)
-        .collection(AppConstants.messagesCollection)
-        .where('receiverId', isEqualTo: senderId)
-        .where('isRead', isEqualTo: false)
-        .get();
-
-    final batch = _firestore.batch();
-    for (final doc in unreadMessages.docs) {
-      batch.update(doc.reference, {'isRead': true});
-    }
-    await batch.commit();
-  }
+Stream<int> getUnreadCount(String currentUserId, String otherUserId) {
+  final chatRoomId = getChatRoomId(currentUserId, otherUserId);
+  return _firestore
+      .collection(AppConstants.chatsCollection)
+      .doc(chatRoomId)
+      .collection(AppConstants.messagesCollection)
+      .where('receiverId', isEqualTo: currentUserId)
+      .where('isRead', isEqualTo: false)
+      .snapshots()
+      .map((snapshot) => snapshot.docs.length);
+}
 }

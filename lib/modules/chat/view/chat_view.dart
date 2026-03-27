@@ -15,6 +15,12 @@ class ChatView extends StatelessWidget {
   Widget build(BuildContext context) {
     final vm = Get.put(ChatViewModel());
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final chatId = _generateChatId(vm.currentUserId, vm.receiver.uid);
+      vm.setCurrentChat(chatId);
+      print('ChatView opened with chatId: $chatId'); // for debugging
+    });
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
@@ -437,6 +443,11 @@ class _MessageBubble extends StatelessWidget {
     );
   }
 }
+
+String _generateChatId(String uid1, String uid2) {
+    final ids = [uid1, uid2]..sort();
+    return ids.join('_');
+  }
 
 // Message Input Bar
 class _MessageInput extends StatelessWidget {

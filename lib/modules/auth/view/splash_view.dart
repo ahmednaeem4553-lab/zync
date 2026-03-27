@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:zync/data/services/notification_service.dart';
 import '../../../core/theme/app_theme.dart';
 
 class SplashView extends StatefulWidget {
@@ -11,10 +13,26 @@ class SplashView extends StatefulWidget {
 }
 
 class _SplashViewState extends State<SplashView> {
+  final NotificationServices notificationServices = NotificationServices();
+
   @override
   void initState() {
     super.initState();
+
     _navigate();
+
+    // Notification setup (no context needed anymore)
+    notificationServices.requestNotificationPermission();
+    notificationServices.forgroundMessage();
+    notificationServices.firebaseInit();           // ← removed (context)
+    notificationServices.setupInteractMessage();   // ← removed (context)
+    notificationServices.isTokenRefresh();
+
+    notificationServices.getDeviceToken().then((value) {
+      if (kDebugMode) {
+        print('Device Token: $value');
+      }
+    });
   }
 
   Future<void> _navigate() async {

@@ -1,7 +1,7 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:zync/core/widgets/zync_avatart.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/message_model.dart';
 import '../../data/models/user_model.dart';
@@ -43,21 +43,11 @@ class UserChatTile extends StatelessWidget {
                     // Avatar with online dot
                     Stack(
                       children: [
-                        CircleAvatar(
+                        // ✅ ZyncAvatar handles both base64 and URL
+                        ZyncAvatar(
+                          photoUrl: user.photoUrl,
+                          name: user.name,
                           radius: 28,
-                          backgroundColor: AppTheme.divider,
-                          child: ClipOval(
-                            child: user.photoUrl.isNotEmpty
-                                ? Image.network(
-                                    user.photoUrl,
-                                    width: 56,
-                                    height: 56,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) =>
-                                        _avatarFallback(user.name),
-                                  )
-                                : _avatarFallback(user.name),
-                          ),
                         ),
                         if (user.isOnline)
                           Positioned(
@@ -88,7 +78,8 @@ class UserChatTile extends StatelessWidget {
                         children: [
                           // Name + time row
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment:
+                                MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
                                 user.name,
@@ -121,7 +112,7 @@ class UserChatTile extends StatelessWidget {
 
                           const SizedBox(height: 4),
 
-                          // Last message + unread badge row
+                          // Last message + unread badge
                           Row(
                             children: [
                               Expanded(
@@ -141,7 +132,7 @@ class UserChatTile extends StatelessWidget {
                                 ),
                               ),
 
-                              // Unread count badge
+                              // Unread badge
                               if (unreadCount > 0)
                                 Container(
                                   margin: const EdgeInsets.only(left: 8),
@@ -151,7 +142,8 @@ class UserChatTile extends StatelessWidget {
                                   ),
                                   decoration: BoxDecoration(
                                     color: AppTheme.primary,
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius:
+                                        BorderRadius.circular(12),
                                   ),
                                   child: Text(
                                     unreadCount > 99
@@ -194,23 +186,5 @@ class UserChatTile extends StatelessWidget {
     }
 
     return '$prefix${lastMessage.message}';
-  }
-
-  Widget _avatarFallback(String name) {
-    return Container(
-      width: 56,
-      height: 56,
-      color: AppTheme.primary.withOpacity(0.1),
-      child: Center(
-        child: Text(
-          name.isNotEmpty ? name[0].toUpperCase() : '?',
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.primary,
-          ),
-        ),
-      ),
-    );
   }
 }

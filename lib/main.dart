@@ -1,10 +1,10 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:zync/data/services/notification_services.dart';
+import 'package:zync/data/services/notification_service.dart'; // Make sure path is correct
 import 'package:zync/modules/chat/view/chat_view.dart';
-import 'package:zync/modules/home/view/home_view.dart';
 import 'package:zync/modules/home/view/main_view.dart';
 import 'core/theme/app_theme.dart';
 import 'firebase_options.dart';
@@ -12,19 +12,26 @@ import 'modules/auth/view/login_view.dart';
 import 'modules/auth/view/register_view.dart';
 import 'modules/auth/view/splash_view.dart';
 
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  await NotificationServices().showNotification(message);
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
   await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform);
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
-  // Safe notification init — won't crash app if it fails
-  try {
-    await NotificationService().initialize();
-  } catch (_) {}
-
-  await SystemChrome.setPreferredOrientations(
-      [DeviceOrientation.portraitUp]);
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+  ]);
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -32,6 +39,7 @@ void main() async {
       statusBarIconBrightness: Brightness.dark,
     ),
   );
+
   runApp(const ZyncApp());
 }
 
@@ -51,7 +59,6 @@ class ZyncApp extends StatelessWidget {
         GetPage(name: '/register', page: () => const RegisterView()),
         GetPage(name: '/main', page: () => const MainView()),
         GetPage(name: '/chat', page: () => const ChatView()),
-        // /home will be added in next step
       ],
     );
   }
